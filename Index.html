@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <title>Supervisor Checkout</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .card-custom { border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: none; }
+    .header-band { background: #0d6efd; color: white; padding: 15px; border-radius: 15px 15px 0 0; }
+    .btn-custom { width: 100%; border-radius: 8px; padding: 10px; font-weight: 600; }
+    .hidden { display: none; }
+    .job-item { background: #e9ecef; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; }
+    #report-capture { background: white; padding: 20px; border: 1px solid #ddd; }
+    /* Spinner overlay */
+    #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<div class="container py-3" style="max-width: 600px;">
+  
+  <div id="view-login" class="card card-custom">
+    <div class="header-band text-center">
+      <h4 class="m-0">Supervisor Login</h4>
+    </div>
+    <div class="card-body p-4">
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <select id="login-user" class="form-select form-select-lg"></select>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Passcode</label>
+        <input type="password" id="login-pass" class="form-control form-control-lg" placeholder="Enter code">
+      </div>
+      <button onclick="handleLogin()" class="btn btn-primary btn-custom btn-lg">Login</button>
+      <div id="login-error" class="text-danger mt-3 text-center hidden">Invalid Credentials</div>
+    </div>
+  </div>
+
+  <div id="view-form" class="card card-custom hidden">
+    <div class="header-band d-flex justify-content-between align-items-center">
+      <h5 class="m-0">Job Entry</h5>
+      <span id="display-supervisor" class="badge bg-light text-dark"></span>
+    </div>
+    <div class="card-body">
+      
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label class="small text-muted">Date</label>
+          <input type="date" id="date" class="form-control">
+        </div>
+        <div class="col-6">
+          <label class="small text-muted">Area</label>
+          <select id="area" class="form-select"></select>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label class="small text-muted">Work Location</label>
+        <input type="text" id="workLocation" class="form-control" placeholder="e.g. Boiler 2">
+      </div>
+
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label class="small text-muted">Job Type</label>
+          <select id="jobType" class="form-select">
+            <option value="Erection">Erection</option>
+            <option value="Dismantling">Dismantling</option>
+            <option value="Materials Shifting">Materials Shifting</option>
+            <option value="Unloading">Unloading</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="small text-muted">Scaffolding Type</label>
+          <select id="scaffType" class="form-select">
+            <option value="Normal">Normal</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Designed">Designed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-2">
+         <label class="small text-muted">Elevation</label>
+         <select id="elevation" class="form-select">
+           <option value="0–10">0–10</option>
+           <option value="10–20">10–20</option>
+           <option value="20–30">20–30</option>
+           <option value="30–40">30–40</option>
+           <option value="40–50">40–50</option>
+           <option value="0–45">0–45</option>
+         </select>
+      </div>
+
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label class="small text-muted">Scaffolders</label>
+          <input type="number" id="scaffolders" class="form-control">
+        </div>
+        <div class="col-6">
+          <label class="small text-muted">Helpers</label>
+          <input type="number" id="helpers" class="form-control">
+        </div>
+      </div>
+
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label class="small text-muted">Start Time</label>
+          <input type="time" id="startTime" class="form-control">
+        </div>
+        <div class="col-6">
+          <label class="small text-muted">End Time</label>
+          <input type="time" id="endTime" class="form-control">
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-3"><input type="number" id="dimL" class="form-control" placeholder="L"></div>
+        <div class="col-3"><input type="number" id="dimW" class="form-control" placeholder="W"></div>
+        <div class="col-3"><input type="number" id="dimH" class="form-control" placeholder="H"></div>
+        <div class="col-3"><input type="number" id="dimNos" class="form-control" placeholder="Nos"></div>
+      </div>
+
+      <button onclick="addEntry()" class="btn btn-outline-primary btn-custom mb-3">+ Add Job Entry</button>
+
+      <div id="staged-entries" class="mb-3">
+        <h6 class="border-bottom pb-2">Pending Submission (<span id="entry-count">0</span>)</h6>
+        <div id="entries-list"></div>
+      </div>
+
+      <button id="btn-submit" onclick="submitFinal()" class="btn btn-success btn-custom" disabled>Submit & Checkout</button>
+    </div>
+  </div>
+
+  <div id="view-success" class="card card-custom hidden text-center">
+    <div class="card-body p-4">
+      <h3 class="text-success">Success!</h3>
+      <p>Data submitted successfully.</p>
+      
+      <div id="report-container" class="text-start mb-3" style="overflow-x:auto;">
+        <div id="report-capture">
+            <h5 style="margin-bottom:10px; color:#0d6efd;">Job Completion Report</h5>
+            <p style="margin:0"><strong>Supervisor:</strong> <span id="rpt-sup"></span></p>
+            <p style="margin:0 0 10px 0"><strong>Date:</strong> <span id="rpt-date"></span></p>
+            <table class="table table-bordered table-sm" style="font-size:12px;">
+                <thead class="table-light">
+                    <tr>
+                        <th>Loc</th><th>Type</th><th>Time</th><th>Size (L/W/H)</th>
+                    </tr>
+                </thead>
+                <tbody id="rpt-body"></tbody>
+            </table>
+        </div>
+      </div>
+
+      <p class="small text-muted">Report downloaded automatically.</p>
+      
+      <button onclick="shareWhatsApp()" class="btn btn-success btn-custom mb-2">
+        <svg width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
+            <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.324-.902l-.238-.14-2.479.65.662-2.415-.154-.244a6.572 6.572 0 1 1 8.956-8.957c3.633 0 6.6 2.96 6.606 6.57a6.576 6.576 0 0 1-1.423 4.417z"/>
+        </svg> 
+        Share on WhatsApp
+      </button>
+      <button onclick="location.reload()" class="btn btn-secondary btn-custom">Close & Logout</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // *** CONFIGURATION ***
+  // PASTE YOUR DEPLOYED WEB APP URL HERE
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxoFPOHeo8YPDu2kZYRVOZN7xUa3WfhNCRo0LPfAhSSPfHHSQYTO56sD-AIIhIaEIu2Qg/exec";
+
+  // State
+  let appData = { areas: [], users: [] };
+  let currentSupervisor = "";
+  let jobEntries = [];
+
+  // Init
+  window.onload = function() {
+    // Set default date to today
+    document.getElementById('date').valueAsDate = new Date();
+    
+    // Fetch Data
+    google.script.run.withSuccessHandler(function(data) {
+      appData = data;
+      populateLogin();
+      document.getElementById('loading').classList.add('hidden');
+    }).getAppData();
+  };
+
+  function populateLogin() {
+    const select = document.getElementById('login-user');
+    appData.users.forEach(u => {
+      let opt = document.createElement('option');
+      opt.value = u.username;
+      opt.text = u.username;
+      select.add(opt);
+    });
+  }
+
+  function handleLogin() {
+    const user = document.getElementById('login-user').value;
+    const pass = document.getElementById('login-pass').value;
+    
+    const validUser = appData.users.find(u => u.username === user && u.passcode == pass);
+    
+    if (validUser) {
+      currentSupervisor = user;
+      document.getElementById('display-supervisor').innerText = user;
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('view-form').classList.remove('hidden');
+      
+      // Populate Areas
+      const areaSelect = document.getElementById('area');
+      appData.areas.forEach(a => {
+        let opt = document.createElement('option');
+        opt.value = a;
+        opt.text = a;
+        areaSelect.add(opt);
+      });
+    } else {
+      document.getElementById('login-error').classList.remove('hidden');
+    }
+  }
+
+  function addEntry() {
+    // Basic Validation
+    const fields = ['date', 'area', 'workLocation', 'scaffolders', 'helpers', 'startTime', 'endTime', 'dimL', 'dimW', 'dimH', 'dimNos'];
+    let valid = true;
+    fields.forEach(f => {
+        if(!document.getElementById(f).value) valid = false;
+    });
+
+    if(!valid) {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    const entry = {
+        date: document.getElementById('date').value,
+        area: document.getElementById('area').value,
+        jobType: document.getElementById('jobType').value,
+        workLocation: document.getElementById('workLocation').value,
+        scaffoldingType: document.getElementById('scaffType').value,
+        elevation: document.getElementById('elevation').value,
+        scaffolders: document.getElementById('scaffolders').value,
+        helpers: document.getElementById('helpers').value,
+        supervisorName: currentSupervisor,
+        startTime: document.getElementById('startTime').value,
+        endTime: document.getElementById('endTime').value,
+        L: document.getElementById('dimL').value,
+        W: document.getElementById('dimW').value,
+        H: document.getElementById('dimH').value,
+        Nos: document.getElementById('dimNos').value
+    };
+
+    jobEntries.push(entry);
+    renderEntries();
+    
+    // Clear manual inputs (Keep Date, Area, Supervisor)
+    document.getElementById('workLocation').value = '';
+    document.getElementById('dimL').value = '';
+    document.getElementById('dimW').value = '';
+    document.getElementById('dimH').value = '';
+    document.getElementById('dimNos').value = '';
+  }
+
+  function renderEntries() {
+    const container = document.getElementById('entries-list');
+    container.innerHTML = '';
+    
+    jobEntries.forEach((job, index) => {
+        const div = document.createElement('div');
+        div.className = 'job-item d-flex justify-content-between align-items-center';
+        div.innerHTML = `
+            <div>
+                <strong>${job.workLocation}</strong> (${job.jobType})<br>
+                <span class="text-muted" style="font-size:0.8rem">${job.L}x${job.W}x${job.H} - ${job.Nos} Nos</span>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="removeEntry(${index})">X</button>
+        `;
+        container.appendChild(div);
+    });
+    
+    document.getElementById('entry-count').innerText = jobEntries.length;
+    document.getElementById('btn-submit').disabled = jobEntries.length === 0;
+  }
+
+  function removeEntry(index) {
+    jobEntries.splice(index, 1);
+    renderEntries();
+  }
+
+  function submitFinal() {
+    document.getElementById('loading').classList.remove('hidden');
+    
+    google.script.run.withSuccessHandler(function(res) {
+        document.getElementById('loading').classList.add('hidden');
+        if(res.success) {
+            prepareReport();
+            document.getElementById('view-form').classList.add('hidden');
+            document.getElementById('view-success').classList.remove('hidden');
+        } else {
+            alert('Error submitting data');
+        }
+    }).submitJobData(jobEntries);
+  }
+
+  function prepareReport() {
+    // Fill the hidden report table
+    document.getElementById('rpt-sup').innerText = currentSupervisor;
+    document.getElementById('rpt-date').innerText = jobEntries[0].date;
+    const tbody = document.getElementById('rpt-body');
+    
+    jobEntries.forEach(j => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${j.workLocation}</td><td>${j.jobType}</td><td>${j.startTime}-${j.endTime}</td><td>${j.L}x${j.W}x${j.H}</td>`;
+        tbody.appendChild(tr);
+    });
+
+    // Generate JPG
+    setTimeout(() => {
+        html2canvas(document.querySelector("#report-capture")).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Job_Report_${Date.now()}.jpg`;
+            link.href = canvas.toDataURL("image/jpeg");
+            link.click();
+        });
+    }, 500);
+  }
+
+  function shareWhatsApp() {
+    const text = `*Job Completion Report*%0A*Supervisor:* ${currentSupervisor}%0A*Total Entries:* ${jobEntries.length}%0A(Please attach the downloaded image)`;
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    
+    // Auto logout logic after sharing is tricky as we lose focus, 
+    // but the 'Close & Logout' button handles the reset.
+  }
+</script>
+</body>
+</html>
