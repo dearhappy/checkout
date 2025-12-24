@@ -13,9 +13,44 @@
     .btn-custom { width: 100%; border-radius: 8px; padding: 10px; font-weight: 600; }
     .hidden { display: none !important; }
     .job-item { background: #e9ecef; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; }
-    #report-capture { background: white; padding: 20px; border: 1px solid #ddd; width: 100%; max-width: 800px; }
-    /* Spinner overlay */
+    
+    /* Loading Overlay */
     #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; }
+    
+    /* REPORT GENERATION STYLES */
+    /* Positioned off-screen but kept in DOM for html2canvas to render */
+    #offscreen-report-container {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+    }
+    
+    /* Fixed width ensures high resolution output regardless of mobile screen size */
+    #report-capture {
+        width: 1600px; 
+        background: white; 
+        padding: 30px; 
+        border: 2px solid #333;
+        font-family: Arial, sans-serif;
+    }
+
+    #report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    #report-table th, #report-table td {
+        border: 1px solid #000;
+        padding: 8px 4px;
+        vertical-align: middle;
+    }
+
+    #report-table th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -23,7 +58,7 @@
 <div id="loading">
   <div class="d-flex flex-column align-items-center">
     <div class="spinner-border text-primary" role="status"></div>
-    <div class="mt-2 text-primary">Connecting to Database...</div>
+    <div class="mt-2 text-primary">Connecting...</div>
   </div>
 </div>
 
@@ -148,24 +183,7 @@
     <div class="card-body p-4">
       <h3 class="text-success">Success!</h3>
       <p>Data submitted successfully.</p>
-      
-      <div style="position: absolute; left: -9999px;">
-        <div id="report-capture">
-            <h5 style="margin-bottom:10px; color:#0d6efd; font-family:sans-serif;">Job Completion Report</h5>
-            <p style="margin:0; font-family:sans-serif;"><strong>Supervisor:</strong> <span id="rpt-sup"></span></p>
-            <p style="margin:0 0 10px 0; font-family:sans-serif;"><strong>Date:</strong> <span id="rpt-date"></span></p>
-            <table class="table table-bordered table-sm" style="font-size:12px; width:100%;">
-                <thead class="table-light">
-                    <tr>
-                        <th>Loc</th><th>Type</th><th>Time</th><th>Size (L/W/H)</th>
-                    </tr>
-                </thead>
-                <tbody id="rpt-body"></tbody>
-            </table>
-        </div>
-      </div>
-
-      <p class="small text-muted">Report downloaded automatically.</p>
+      <p class="small text-muted">The report has been downloaded to your device.</p>
       
       <button onclick="shareWhatsApp()" class="btn btn-success btn-custom mb-2">
         Share on WhatsApp
@@ -174,6 +192,37 @@
     </div>
   </div>
 
+</div>
+
+<div id="offscreen-report-container">
+  <div id="report-capture">
+    <h3 style="text-align: center; margin-bottom: 20px; color: #0d6efd;">JOB COMPLETION REPORT</h3>
+    
+    <table id="report-table">
+        <thead>
+            <tr>
+                <th style="width: 40px;">SL NO</th>
+                <th>DATE</th>
+                <th>AREA</th>
+                <th>JOB TYPE</th>
+                <th>WORK LOCATION</th>
+                <th>SCAFFOLDING TYPE</th>
+                <th>ELEVATION</th>
+                <th>SCAFFOLDERS</th>
+                <th>HELPERS</th>
+                <th>SUPERVISOR</th>
+                <th>START TIME</th>
+                <th>END TIME</th>
+                <th style="width: 40px;">L</th>
+                <th style="width: 40px;">W</th>
+                <th style="width: 40px;">H</th>
+                <th style="width: 40px;">Nos</th>
+            </tr>
+        </thead>
+        <tbody id="rpt-body">
+            </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -191,7 +240,6 @@
   };
 
   function fetchAppData() {
-    // Standard Fetch GET request
     fetch(SCRIPT_URL)
       .then(response => response.json())
       .then(data => {
@@ -273,7 +321,7 @@
     jobEntries.push(entry);
     renderEntries();
     
-    // Clear dynamic inputs
+    // Clear dynamic inputs (keep Date and Area)
     document.getElementById('workLocation').value = '';
     document.getElementById('dimL').value = '';
     document.getElementById('dimW').value = '';
@@ -310,19 +358,16 @@
   function submitFinal() {
     document.getElementById('loading').classList.remove('hidden');
     
-    // Send data as text/plain to bypass complex CORS preflight checks
     fetch(SCRIPT_URL, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'text/plain;charset=utf-8',
-        },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(jobEntries)
     })
     .then(response => response.json())
     .then(data => {
         document.getElementById('loading').classList.add('hidden');
         if(data.status === 'success') {
-            prepareReport();
+            generateReport();
             document.getElementById('view-form').classList.add('hidden');
             document.getElementById('view-success').classList.remove('hidden');
         } else {
@@ -335,24 +380,43 @@
     });
   }
 
-  function prepareReport() {
-    document.getElementById('rpt-sup').innerText = currentSupervisor;
-    document.getElementById('rpt-date').innerText = jobEntries[0].date;
+  function generateReport() {
     const tbody = document.getElementById('rpt-body');
     tbody.innerHTML = '';
     
-    jobEntries.forEach(j => {
+    jobEntries.forEach((j, index) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${j.workLocation}</td><td>${j.jobType}</td><td>${j.startTime}-${j.endTime}</td><td>${j.L}x${j.W}x${j.H}</td>`;
+        // SL NO, DATE, AREA, JOB TYPE, WORK LOCATION, SCAFF TYPE, ELEVATION, SCAFFOLDERS, HELPERS, SUP, START, END, L, W, H, NOS
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${j.date}</td>
+            <td>${j.area}</td>
+            <td>${j.jobType}</td>
+            <td>${j.workLocation}</td>
+            <td>${j.scaffoldingType}</td>
+            <td>${j.elevation}</td>
+            <td>${j.scaffolders}</td>
+            <td>${j.helpers}</td>
+            <td>${j.supervisorName}</td>
+            <td>${j.startTime}</td>
+            <td>${j.endTime}</td>
+            <td>${j.L}</td>
+            <td>${j.W}</td>
+            <td>${j.H}</td>
+            <td>${j.Nos}</td>
+        `;
         tbody.appendChild(tr);
     });
 
-    // Generate JPG
+    // Wait briefly for DOM to render before capturing
     setTimeout(() => {
-        html2canvas(document.querySelector("#report-capture")).then(canvas => {
+        html2canvas(document.querySelector("#report-capture"), {
+            scale: 2 // High resolution
+        }).then(canvas => {
             const link = document.createElement('a');
-            link.download = `Job_Report_${Date.now()}.jpg`;
-            link.href = canvas.toDataURL("image/jpeg");
+            const timestamp = new Date().toISOString().slice(0,19).replace(/:/g,"-");
+            link.download = `JobReport_${currentSupervisor}_${timestamp}.jpg`;
+            link.href = canvas.toDataURL("image/jpeg", 0.9);
             link.click();
         });
     }, 500);
