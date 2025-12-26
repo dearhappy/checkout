@@ -24,7 +24,6 @@
         top: 0;
     }
     
-    /* A5 Landscape High Res Canvas */
     #report-capture {
         width: 2100px; 
         min-height: 1485px; 
@@ -69,7 +68,7 @@
     #report-table th {
         background-color: #0d6efd;
         color: white;
-        font-size: 18px; /* Slightly smaller to fit full headers */
+        font-size: 18px; 
         padding: 15px 5px;
         text-transform: uppercase;
         border: 1px solid #0b5ed7;
@@ -86,7 +85,7 @@
         word-wrap: break-word;
     }
     
-    /* Column Sizing for nice fit */
+    /* Column Sizing */
     .col-xs { width: 4%; } 
     .col-sm { width: 6%; } 
     .col-md { width: 10%; } 
@@ -220,14 +219,26 @@
 
   <div id="view-success" class="card card-custom hidden text-center">
     <div class="card-body p-4">
-      <h3 class="text-success">Success!</h3>
-      <p>Data submitted successfully.</p>
-      <p class="small text-muted">Report downloaded automatically.</p>
+      <h3 class="text-success mb-3">Success!</h3>
       
-      <button onclick="shareWhatsApp()" class="btn btn-success btn-custom mb-2">
-        Share on WhatsApp
-      </button>
-      <button onclick="location.reload()" class="btn btn-secondary btn-custom">Close & Logout</button>
+      <div class="form-floating mb-3">
+        <textarea class="form-control" id="summary-text" style="height: 200px; font-family: monospace; font-size: 14px; background-color: #f8f9fa;" readonly></textarea>
+        <label for="summary-text">Text Report Preview</label>
+      </div>
+
+      <div class="d-grid gap-2">
+        <button onclick="copyToClipboard()" class="btn btn-outline-secondary btn-custom">
+           Copy Report Text
+        </button>
+        <button onclick="shareWhatsApp()" class="btn btn-success btn-custom">
+           Share Direct to WhatsApp
+        </button>
+        <button onclick="location.reload()" class="btn btn-secondary btn-custom mt-2">
+          Close & Logout
+        </button>
+      </div>
+      
+      <p class="small text-muted mt-3">Image report downloaded automatically.</p>
     </div>
   </div>
 
@@ -280,6 +291,7 @@
   let appData = { areas: [], users: [] };
   let currentSupervisor = "";
   let jobEntries = [];
+  let generatedReportText = "";
 
   window.onload = function() {
     document.getElementById('date').valueAsDate = new Date();
@@ -336,9 +348,6 @@
   }
 
   function addEntry() {
-    // Validation removed as requested.
-    // Fields can be blank.
-    
     const entry = {
         date: document.getElementById('date').value,
         area: document.getElementById('area').value,
@@ -360,14 +369,12 @@
     jobEntries.push(entry);
     renderEntries();
     
-    // Clear dynamic inputs (keep Date and Area)
+    // Clear dynamic inputs
     document.getElementById('workLocation').value = '';
     document.getElementById('dimL').value = '';
     document.getElementById('dimW').value = '';
     document.getElementById('dimH').value = '';
     document.getElementById('dimNos').value = '';
-    // Optional: Reset other dropdowns to default? 
-    // Usually better to keep them for speed, but reset numeric fields.
   }
 
   function renderEntries() {
@@ -409,6 +416,7 @@
         document.getElementById('loading').classList.add('hidden');
         if(data.status === 'success') {
             generateReport();
+            prepareTextReport(); // Calculate text
             document.getElementById('view-form').classList.add('hidden');
             document.getElementById('view-success').classList.remove('hidden');
         } else {
@@ -450,7 +458,6 @@
         tbody.appendChild(tr);
     });
 
-    // Capture High Res
     setTimeout(() => {
         html2canvas(document.querySelector("#report-capture"), {
             scale: 1, 
@@ -465,22 +472,62 @@
     }, 800);
   }
 
-  function shareWhatsApp() {
-    // Calculate Totals
-    let totalScaff = jobEntries.reduce((sum, job) => sum + (parseInt(job.scaffolders) || 0), 0);
-    let totalHelp = jobEntries.reduce((sum, job) => sum + (parseInt(job.helpers) || 0), 0);
-    
-    // Create Work Summary List
-    let summaryList = jobEntries.map(j => `%E2%80%A2 ${j.workLocation || 'Loc'} (${j.jobType})`).join('%0A');
+  function prepareTextReport() {
+    let totalErectVol = 0;
+    let totalDismVol = 0;
+    let totalScaff = 0;
+    let totalHelp = 0;
 
-    const text = `*Job Completion Report*%0A` +
-                 `*Supervisor:* ${currentSupervisor}%0A` +
-                 `*Total Scaffolders:* ${totalScaff}%0A` +
-                 `*Total Helpers:* ${totalHelp}%0A` +
-                 `*Total Supervisor:* ${currentSupervisor}%0A%0A` +
-                 `*Work Summary:*%0A${summaryList}`;
-                 
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    jobEntries.forEach(j => {
+        // Calculate Volume: L * W * H * Nos
+        let l = parseFloat(j.L) || 0;
+        let w = parseFloat(j.W) || 0;
+        let h = parseFloat(j.H) || 0;
+        let nos = parseFloat(j.Nos) || 0;
+        let vol = l * w * h * nos;
+
+        if (j.jobType === 'Erection') totalErectVol += vol;
+        if (j.jobType === 'Dismantling') totalDismVol += vol;
+        // If 'Unloading' or 'Shifting', volume usually ignored for erection/dismantling totals
+
+        totalScaff += parseFloat(j.scaffolders) || 0;
+        totalHelp += parseFloat(j.helpers) || 0;
+    });
+
+    let manpower = totalScaff + totalHelp;
+    let productivity = 0;
+    
+    // Formula: (Dismantling/2 + Erection) / (Scaff + Help) * 9
+    if (manpower > 0) {
+        productivity = ((totalDismVol / 2) + totalErectVol) / manpower * 9;
+    }
+
+    // Format Text
+    generatedReportText = 
+`Date: ${jobEntries[0].date}
+Supervisor Name: ${currentSupervisor}
+Total Erection: ${totalErectVol.toFixed(2)}
+Total Dismantling: ${totalDismVol.toFixed(2)}
+Scaffolders: ${totalScaff}
+Helpers: ${totalHelp}
+Productivity: ${productivity.toFixed(2)} m³/hr`;
+
+    // Put into Textarea
+    document.getElementById('summary-text').value = generatedReportText;
+  }
+
+  function copyToClipboard() {
+    const textarea = document.getElementById('summary-text');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(textarea.value).then(() => {
+        alert("Report copied to clipboard!");
+    });
+  }
+
+  function shareWhatsApp() {
+    const encodedText = encodeURIComponent(generatedReportText);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
   }
 </script>
 </body>
