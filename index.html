@@ -24,14 +24,12 @@
         top: 0;
     }
     
-    /* A5 Landscape @ 300 DPI approx: 2480px x 1748px.
-       We use a scaled equivalent ~2100px width for screen rendering.
-    */
+    /* A5 Landscape High Res Canvas */
     #report-capture {
         width: 2100px; 
-        min-height: 1485px; /* Enforces A5 Aspect Ratio even for 1 entry */
+        min-height: 1485px; 
         background: white; 
-        padding: 60px; 
+        padding: 50px; 
         box-sizing: border-box;
         border: 2px solid #ccc;
         font-family: 'Arial', sans-serif;
@@ -65,39 +63,33 @@
     #report-table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: auto; /* Pushes footer down */
+        margin-bottom: auto; 
     }
 
     #report-table th {
         background-color: #0d6efd;
         color: white;
-        font-size: 22px;
-        padding: 15px 8px;
+        font-size: 18px; /* Slightly smaller to fit full headers */
+        padding: 15px 5px;
         text-transform: uppercase;
         border: 1px solid #0b5ed7;
+        vertical-align: middle;
     }
 
     #report-table td {
         border: 1px solid #ccc;
-        padding: 15px 8px;
-        font-size: 24px;
+        padding: 12px 5px;
+        font-size: 22px;
         text-align: center;
         color: #333;
+        vertical-align: middle;
+        word-wrap: break-word;
     }
     
-    /* Specific column widths to ensure fit */
-    .col-xs { width: 50px; } /* SL, Nos */
-    .col-sm { width: 80px; } /* Dims */
-    .col-md { width: 120px; } /* Time */
-
-    .rpt-footer {
-        margin-top: 50px;
-        border-top: 2px solid #ccc;
-        padding-top: 20px;
-        text-align: right;
-        font-size: 20px;
-        color: #777;
-    }
+    /* Column Sizing for nice fit */
+    .col-xs { width: 4%; } 
+    .col-sm { width: 6%; } 
+    .col-md { width: 10%; } 
   </style>
 </head>
 <body>
@@ -256,32 +248,27 @@
     <table id="report-table">
         <thead>
             <tr>
-                <th class="col-xs">SL</th>
-                <th>DATE</th>
+                <th class="col-xs">SL NO</th>
+                <th class="col-md">DATE</th>
                 <th>AREA</th>
                 <th>JOB TYPE</th>
-                <th>WORK LOC</th>
-                <th>SCAFF TYPE</th>
-                <th>ELEV</th>
-                <th>SCAF</th>
-                <th>HELP</th>
-                <th>SUP</th>
-                <th class="col-md">START</th>
-                <th class="col-md">END</th>
-                <th class="col-sm">L</th>
-                <th class="col-sm">W</th>
-                <th class="col-sm">H</th>
+                <th>WORK LOCATION</th>
+                <th>SCAFFOLDING TYPE</th>
+                <th>ELEVATION</th>
+                <th>SCAFFOLDERS</th>
+                <th>HELPERS</th>
+                <th>SUPERVISOR NAME</th>
+                <th>START TIME</th>
+                <th>END TIME</th>
+                <th class="col-xs">L</th>
+                <th class="col-xs">W</th>
+                <th class="col-xs">H</th>
                 <th class="col-xs">Nos</th>
             </tr>
         </thead>
         <tbody id="rpt-body">
             </tbody>
     </table>
-
-    <div class="rpt-footer">
-        Generated via Supervisor Checkout App
-    </div>
-
   </div>
 </div>
 
@@ -349,17 +336,9 @@
   }
 
   function addEntry() {
-    const fields = ['date', 'area', 'workLocation', 'scaffolders', 'helpers', 'startTime', 'endTime', 'dimL', 'dimW', 'dimH', 'dimNos'];
-    let valid = true;
-    fields.forEach(f => {
-        if(!document.getElementById(f).value) valid = false;
-    });
-
-    if(!valid) {
-        alert("Please fill in all fields.");
-        return;
-    }
-
+    // Validation removed as requested.
+    // Fields can be blank.
+    
     const entry = {
         date: document.getElementById('date').value,
         area: document.getElementById('area').value,
@@ -387,6 +366,8 @@
     document.getElementById('dimW').value = '';
     document.getElementById('dimH').value = '';
     document.getElementById('dimNos').value = '';
+    // Optional: Reset other dropdowns to default? 
+    // Usually better to keep them for speed, but reset numeric fields.
   }
 
   function renderEntries() {
@@ -398,7 +379,7 @@
         div.className = 'job-item d-flex justify-content-between align-items-center';
         div.innerHTML = `
             <div>
-                <strong>${job.workLocation}</strong> (${job.jobType})<br>
+                <strong>${job.workLocation || 'No Loc'}</strong> (${job.jobType})<br>
                 <span class="text-muted" style="font-size:0.8rem">${job.L}x${job.W}x${job.H} - ${job.Nos} Nos</span>
             </div>
             <button class="btn btn-sm btn-danger" onclick="removeEntry(${index})">X</button>
@@ -448,7 +429,6 @@
     
     jobEntries.forEach((j, index) => {
         const tr = document.createElement('tr');
-        // SL NO, DATE, AREA, JOB TYPE, WORK LOCATION, SCAFF TYPE, ELEVATION, SCAFFOLDERS, HELPERS, SUP, START, END, L, W, H, NOS
         tr.innerHTML = `
             <td>${index + 1}</td>
             <td>${j.date}</td>
@@ -473,7 +453,7 @@
     // Capture High Res
     setTimeout(() => {
         html2canvas(document.querySelector("#report-capture"), {
-            scale: 1, // We set physical width to 2100px in CSS, so scale 1 is already high res
+            scale: 1, 
             useCORS: true
         }).then(canvas => {
             const link = document.createElement('a');
@@ -486,7 +466,20 @@
   }
 
   function shareWhatsApp() {
-    const text = `*Job Completion Report*%0A*Supervisor:* ${currentSupervisor}%0A*Total Entries:* ${jobEntries.length}%0A(Please attach the downloaded image)`;
+    // Calculate Totals
+    let totalScaff = jobEntries.reduce((sum, job) => sum + (parseInt(job.scaffolders) || 0), 0);
+    let totalHelp = jobEntries.reduce((sum, job) => sum + (parseInt(job.helpers) || 0), 0);
+    
+    // Create Work Summary List
+    let summaryList = jobEntries.map(j => `%E2%80%A2 ${j.workLocation || 'Loc'} (${j.jobType})`).join('%0A');
+
+    const text = `*Job Completion Report*%0A` +
+                 `*Supervisor:* ${currentSupervisor}%0A` +
+                 `*Total Scaffolders:* ${totalScaff}%0A` +
+                 `*Total Helpers:* ${totalHelp}%0A` +
+                 `*Total Supervisor:* ${currentSupervisor}%0A%0A` +
+                 `*Work Summary:*%0A${summaryList}`;
+                 
     window.open(`https://wa.me/?text=${text}`, '_blank');
   }
 </script>
