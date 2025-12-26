@@ -17,39 +17,86 @@
     /* Loading Overlay */
     #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; }
     
-    /* REPORT GENERATION STYLES */
-    /* Positioned off-screen but kept in DOM for html2canvas to render */
+    /* REPORT GENERATION STYLES (A5 Landscape High-Res) */
     #offscreen-report-container {
         position: absolute;
         left: -9999px;
         top: 0;
     }
     
-    /* Fixed width ensures high resolution output regardless of mobile screen size */
+    /* A5 Landscape @ 300 DPI approx: 2480px x 1748px.
+       We use a scaled equivalent ~2100px width for screen rendering.
+    */
     #report-capture {
-        width: 1600px; 
+        width: 2100px; 
+        min-height: 1485px; /* Enforces A5 Aspect Ratio even for 1 entry */
         background: white; 
-        padding: 30px; 
-        border: 2px solid #333;
-        font-family: Arial, sans-serif;
+        padding: 60px; 
+        box-sizing: border-box;
+        border: 2px solid #ccc;
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rpt-header {
+        text-align: center;
+        margin-bottom: 40px;
+        border-bottom: 4px solid #0d6efd;
+        padding-bottom: 20px;
+    }
+
+    .rpt-header h1 {
+        font-size: 50px;
+        color: #0d6efd;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .rpt-meta {
+        font-size: 28px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        color: #555;
     }
 
     #report-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 14px;
-        text-align: center;
-    }
-
-    #report-table th, #report-table td {
-        border: 1px solid #000;
-        padding: 8px 4px;
-        vertical-align: middle;
+        margin-bottom: auto; /* Pushes footer down */
     }
 
     #report-table th {
-        background-color: #f0f0f0;
-        font-weight: bold;
+        background-color: #0d6efd;
+        color: white;
+        font-size: 22px;
+        padding: 15px 8px;
+        text-transform: uppercase;
+        border: 1px solid #0b5ed7;
+    }
+
+    #report-table td {
+        border: 1px solid #ccc;
+        padding: 15px 8px;
+        font-size: 24px;
+        text-align: center;
+        color: #333;
+    }
+    
+    /* Specific column widths to ensure fit */
+    .col-xs { width: 50px; } /* SL, Nos */
+    .col-sm { width: 80px; } /* Dims */
+    .col-md { width: 120px; } /* Time */
+
+    .rpt-footer {
+        margin-top: 50px;
+        border-top: 2px solid #ccc;
+        padding-top: 20px;
+        text-align: right;
+        font-size: 20px;
+        color: #777;
     }
   </style>
 </head>
@@ -183,7 +230,7 @@
     <div class="card-body p-4">
       <h3 class="text-success">Success!</h3>
       <p>Data submitted successfully.</p>
-      <p class="small text-muted">The report has been downloaded to your device.</p>
+      <p class="small text-muted">Report downloaded automatically.</p>
       
       <button onclick="shareWhatsApp()" class="btn btn-success btn-custom mb-2">
         Share on WhatsApp
@@ -196,32 +243,45 @@
 
 <div id="offscreen-report-container">
   <div id="report-capture">
-    <h3 style="text-align: center; margin-bottom: 20px; color: #0d6efd;">JOB COMPLETION REPORT</h3>
+    
+    <div class="rpt-header">
+        <h1>Supervisor Job Completion</h1>
+    </div>
+
+    <div class="rpt-meta">
+        <div><strong>Supervisor:</strong> <span id="rpt-sup"></span></div>
+        <div><strong>Date:</strong> <span id="rpt-date"></span></div>
+    </div>
     
     <table id="report-table">
         <thead>
             <tr>
-                <th style="width: 40px;">SL NO</th>
+                <th class="col-xs">SL</th>
                 <th>DATE</th>
                 <th>AREA</th>
                 <th>JOB TYPE</th>
-                <th>WORK LOCATION</th>
-                <th>SCAFFOLDING TYPE</th>
-                <th>ELEVATION</th>
-                <th>SCAFFOLDERS</th>
-                <th>HELPERS</th>
-                <th>SUPERVISOR</th>
-                <th>START TIME</th>
-                <th>END TIME</th>
-                <th style="width: 40px;">L</th>
-                <th style="width: 40px;">W</th>
-                <th style="width: 40px;">H</th>
-                <th style="width: 40px;">Nos</th>
+                <th>WORK LOC</th>
+                <th>SCAFF TYPE</th>
+                <th>ELEV</th>
+                <th>SCAF</th>
+                <th>HELP</th>
+                <th>SUP</th>
+                <th class="col-md">START</th>
+                <th class="col-md">END</th>
+                <th class="col-sm">L</th>
+                <th class="col-sm">W</th>
+                <th class="col-sm">H</th>
+                <th class="col-xs">Nos</th>
             </tr>
         </thead>
         <tbody id="rpt-body">
             </tbody>
     </table>
+
+    <div class="rpt-footer">
+        Generated via Supervisor Checkout App
+    </div>
+
   </div>
 </div>
 
@@ -381,6 +441,8 @@
   }
 
   function generateReport() {
+    document.getElementById('rpt-sup').innerText = currentSupervisor;
+    document.getElementById('rpt-date').innerText = jobEntries[0].date;
     const tbody = document.getElementById('rpt-body');
     tbody.innerHTML = '';
     
@@ -408,10 +470,11 @@
         tbody.appendChild(tr);
     });
 
-    // Wait briefly for DOM to render before capturing
+    // Capture High Res
     setTimeout(() => {
         html2canvas(document.querySelector("#report-capture"), {
-            scale: 2 // High resolution
+            scale: 1, // We set physical width to 2100px in CSS, so scale 1 is already high res
+            useCORS: true
         }).then(canvas => {
             const link = document.createElement('a');
             const timestamp = new Date().toISOString().slice(0,19).replace(/:/g,"-");
@@ -419,7 +482,7 @@
             link.href = canvas.toDataURL("image/jpeg", 0.9);
             link.click();
         });
-    }, 500);
+    }, 800);
   }
 
   function shareWhatsApp() {
