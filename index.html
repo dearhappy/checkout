@@ -4,80 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Supervisor App</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- html2canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
     <style>
         body { background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .spinner { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @-webkit-keyframes spinner { 0% { -webkit-transform: rotate(0deg); } 100% { -webkit-transform: rotate(360deg); } }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* A4 LANDSCAPE Container */
-        #hidden-report-container {
-            position: absolute;
-            left: -9999px;
-            top: 0;
-            width: 1123px; /* A4 Landscape Width */
-            background: white;
-            padding: 40px;
-            font-family: 'Arial', sans-serif;
-            color: black;
-            z-index: -1;
-            box-sizing: border-box;
-        }
-        
+        #hidden-report-container { position: absolute; left: -9999px; top: 0; width: 1123px; background: white; padding: 40px; font-family: 'Arial', sans-serif; color: black; z-index: -1; box-sizing: border-box; }
         .rpt-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; font-size: 14px; }
-        
-        .rpt-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-bottom: 20px; 
-            table-layout: fixed; 
-        }
-        .rpt-table th, .rpt-table td { 
-            border: 1px solid #000; 
-            padding: 6px; 
-            text-align: center; 
-            font-size: 12px; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-        }
+        .rpt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
+        .rpt-table th, .rpt-table td { border: 1px solid #000; padding: 6px; text-align: center; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .rpt-table th { background-color: #eee; font-weight: bold; text-transform: uppercase; }
         .wrap-cell { white-space: normal !important; word-wrap: break-word; line-height: 1.2; }
-        
         h2 { text-align: center; font-size: 28px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
         .section-title { font-weight: bold; font-size: 18px; margin-top: 20px; margin-bottom: 10px; text-decoration: underline; }
     </style>
 </head>
 <body class="text-gray-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- 1. LOGIN SCREEN -->
+    <!-- 1. LOGIN -->
     <div id="login-screen" class="fixed inset-0 z-50 bg-white flex flex-col justify-center items-center p-6">
         <div class="w-full max-w-sm">
             <h1 class="text-3xl font-bold text-blue-600 mb-2 text-center">Supervisor App</h1>
             <p class="text-gray-500 text-center mb-8">Secure Login</p>
             <div class="space-y-4">
-                <div><label class="block text-sm font-medium text-gray-700">Username</label><select id="login-user" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-3 focus:border-blue-500 focus:ring-blue-500 bg-white"><option value="">Loading users...</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700">Username</label><select id="login-user" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-3 focus:border-blue-500 focus:ring-blue-500 bg-white"><option value="">Loading...</option></select></div>
                 <div><label class="block text-sm font-medium text-gray-700">Passcode</label><input type="password" id="login-pass" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-3 focus:border-blue-500 focus:ring-blue-500" placeholder="••••"></div>
-                <button onclick="handleLogin()" id="btn-login" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Sign In</button>
+                <button onclick="handleLogin()" id="btn-login" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">Sign In</button>
                 <p id="login-error" class="text-red-500 text-center text-sm hidden">Invalid credentials</p>
                 <p id="loading-msg" class="text-gray-400 text-center text-sm hidden">Connecting...</p>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP CONTENT -->
+    <!-- MAIN APP -->
     <div id="app-content" class="flex-1 flex flex-col hidden h-full">
         <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center shrink-0">
-            <div><h1 class="text-lg font-bold">Welcome, <span id="display-name">Supervisor</span></h1><p class="text-xs opacity-80" id="header-date">Loading date...</p></div>
+            <div><h1 class="text-lg font-bold">Welcome, <span id="display-name">Supervisor</span></h1><p class="text-xs opacity-80" id="header-date">Loading...</p></div>
             <button onclick="logout()" class="text-white hover:text-blue-200"><i class="fas fa-sign-out-alt fa-lg"></i></button>
         </header>
         <div class="bg-white border-b flex shrink-0">
@@ -90,7 +57,7 @@
             <div id="view-checkin" class="space-y-4 max-w-lg mx-auto pb-20">
                 <div class="bg-white p-4 rounded-lg shadow space-y-4">
                     <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Daily Check-In</h2>
-                    <div><label class="block text-sm font-medium text-gray-600">Date</label><input type="date" id="ci-date" class="w-full mt-1 p-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium text-gray-600">Date</label><input type="date" id="ci-date" class="w-full mt-1 p-2 border rounded-md" onchange="loadCheckInData()"></div>
                     <div><label class="block text-sm font-medium text-gray-600">Area</label><select id="ci-area" class="w-full mt-1 p-2 border rounded-md bg-white"><option value="">Select Area</option></select></div>
                     <div><label class="block text-sm font-medium text-gray-600">Department</label><select id="ci-dept" class="w-full mt-1 p-2 border rounded-md bg-white"><option value="">Select Department</option></select></div>
                     <div>
@@ -100,6 +67,14 @@
                         <div class="text-right text-xs text-gray-500 mt-1">Selected: <span id="selected-count" class="font-bold">0</span></div>
                     </div>
                     <button onclick="submitCheckIn()" id="btn-ci-submit" class="w-full bg-green-600 text-white py-3 rounded-md font-semibold shadow hover:bg-green-700 transition">Submit Check-In</button>
+                </div>
+                
+                <!-- NEW: Submitted Workers List -->
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">Submitted Workers (Select Date above)</h3>
+                    <div id="submitted-workers-list" class="space-y-2">
+                        <div class="text-center text-gray-400 py-2 text-xs">No workers submitted for this date.</div>
+                    </div>
                 </div>
             </div>
 
@@ -129,41 +104,18 @@
     <!-- ENTRY MODAL -->
     <div id="entry-modal" class="fixed inset-0 z-40 bg-black bg-opacity-50 hidden flex items-end sm:items-center justify-center">
         <div class="bg-white w-full max-w-lg rounded-t-xl sm:rounded-xl p-4 max-h-[90vh] overflow-y-auto no-scrollbar flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold">Add Work Entry</h3>
-                <button onclick="closeEntryModal()" class="text-gray-500 text-2xl">&times;</button>
-            </div>
+            <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold">Add Work Entry</h3><button onclick="closeEntryModal()" class="text-gray-500 text-2xl">&times;</button></div>
             <div class="space-y-3 pb-4">
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs font-bold text-gray-500">Date</label><input type="date" id="co-date" class="w-full border rounded p-2 text-sm bg-gray-100" readonly></div>
-                    <div><label class="text-xs font-bold text-gray-500">Area</label><select id="co-area" class="w-full border rounded p-2 text-sm bg-white"></select></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                     <div><label class="text-xs font-bold text-gray-500">Department (Auto)</label><input type="text" id="co-dept" class="w-full border rounded p-2 text-sm bg-gray-100" readonly placeholder="No Check-In Data"></div>
-                     <div><label class="text-xs font-bold text-gray-500">Tag No</label><input type="text" id="co-tag" class="w-full border rounded p-2 text-sm" placeholder="e.g. T-101"></div>
-                </div>
+                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Date</label><input type="date" id="co-date" class="w-full border rounded p-2 text-sm bg-gray-100" readonly></div><div><label class="text-xs font-bold text-gray-500">Area</label><select id="co-area" class="w-full border rounded p-2 text-sm bg-white"></select></div></div>
+                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Department</label><input type="text" id="co-dept" class="w-full border rounded p-2 text-sm bg-gray-100" readonly placeholder="Auto"></div><div><label class="text-xs font-bold text-gray-500">Tag No</label><input type="text" id="co-tag" class="w-full border rounded p-2 text-sm" placeholder="e.g. T-101"></div></div>
                 <div><label class="text-xs font-bold text-gray-500">Job Type</label><select id="co-job" class="w-full border rounded p-2 text-sm bg-white"><option>Erection</option><option>Dismantling</option><option>Materials Shifting</option><option>Unloading</option></select></div>
-                <div><label class="text-xs font-bold text-gray-500">Work Location</label><input type="text" id="co-location" class="w-full border rounded p-2 text-sm" placeholder="e.g. Tank 4"></div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs font-bold text-gray-500">Scaffold Type</label><select id="co-scaf-type" class="w-full border rounded p-2 text-sm bg-white"><option>Normal</option><option>Suspended</option><option>Designed</option></select></div>
-                    <div><label class="text-xs font-bold text-gray-500">Elevation</label><select id="co-elev" class="w-full border rounded p-2 text-sm bg-white"><option>0-10</option><option>10-20</option><option>20-30</option><option>30-40</option><option>40-50</option><option>0-45</option></select></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs font-bold text-gray-500">Scaffolders</label><input type="number" id="co-scaf-count" class="w-full border rounded p-2 text-sm bg-gray-50" readonly></div>
-                    <div><label class="text-xs font-bold text-gray-500">Helpers</label><input type="number" id="co-help-count" class="w-full border rounded p-2 text-sm bg-gray-50" readonly></div>
-                </div>
+                <div><label class="text-xs font-bold text-gray-500">Work Location</label><input type="text" id="co-location" class="w-full border rounded p-2 text-sm" placeholder="Tank 4"></div>
+                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Scaffold Type</label><select id="co-scaf-type" class="w-full border rounded p-2 text-sm bg-white"><option>Normal</option><option>Suspended</option><option>Designed</option></select></div><div><label class="text-xs font-bold text-gray-500">Elevation</label><select id="co-elev" class="w-full border rounded p-2 text-sm bg-white"><option>0-10</option><option>10-20</option><option>20-30</option><option>30-40</option><option>40-50</option><option>0-45</option></select></div></div>
+                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Scaffolders</label><input type="number" id="co-scaf-count" class="w-full border rounded p-2 text-sm bg-gray-50" readonly></div><div><label class="text-xs font-bold text-gray-500">Helpers</label><input type="number" id="co-help-count" class="w-full border rounded p-2 text-sm bg-gray-50" readonly></div></div>
                 <div><label class="text-xs font-bold text-gray-500">AMNS Eng Name</label><input type="text" id="co-eng" class="w-full border rounded p-2 text-sm"></div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs font-bold text-gray-500">Start Time</label><input type="time" id="co-start" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="text-xs font-bold text-gray-500">End Time</label><input type="time" id="co-end" class="w-full border rounded p-2 text-sm"></div>
-                </div>
+                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Start Time</label><input type="time" id="co-start" class="w-full border rounded p-2 text-sm"></div><div><label class="text-xs font-bold text-gray-500">End Time</label><input type="time" id="co-end" class="w-full border rounded p-2 text-sm"></div></div>
                 <div class="bg-gray-50 p-2 rounded border">
-                    <div class="grid grid-cols-4 gap-2 mb-2">
-                        <div><label class="text-[10px] font-bold text-center block">L</label><input type="number" id="co-l" class="w-full border p-1 text-sm text-center vol-calc" placeholder="0"></div>
-                        <div><label class="text-[10px] font-bold text-center block">W</label><input type="number" id="co-w" class="w-full border p-1 text-sm text-center vol-calc" placeholder="0"></div>
-                        <div><label class="text-[10px] font-bold text-center block">H</label><input type="number" id="co-h" class="w-full border p-1 text-sm text-center vol-calc" placeholder="0"></div>
-                        <div><label class="text-[10px] font-bold text-center block">Nos</label><input type="number" id="co-nos" class="w-full border p-1 text-sm text-center vol-calc" placeholder="1"></div>
-                    </div>
+                    <div class="grid grid-cols-4 gap-2 mb-2"><div><label class="text-[10px] font-bold text-center block">L</label><input type="number" id="co-l" class="w-full border p-1 text-sm text-center vol-calc" placeholder="0"></div><div><label class="text-[10px] font-bold text-center block">W</label><input type="number" id="co-w" class="w-full border p-1 text-sm text-center vol-calc" placeholder="0"></div><div><label class="text-[10px] font-bold text-center block">H</label><input type="number" id="co-h" class="w-full border p-1 text-sm text-center vol-calc" placeholder="0"></div><div><label class="text-[10px] font-bold text-center block">Nos</label><input type="number" id="co-nos" class="w-full border p-1 text-sm text-center vol-calc" placeholder="1"></div></div>
                     <div class="text-right text-sm font-bold text-blue-600">Vol: <span id="co-vol">0.00</span> CuM</div>
                 </div>
             </div>
@@ -174,92 +126,38 @@
     <!-- REPORT MODAL -->
     <div id="report-modal" class="fixed inset-0 z-50 bg-black bg-opacity-90 hidden flex flex-col justify-center items-center p-4">
         <div class="bg-white rounded-lg p-4 w-full max-w-md text-center space-y-4">
-            <div id="report-spinner" class="py-10">
-                <div class="spinner ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div>
-                <h2 class="text-xl font-semibold">Generating Report...</h2>
-                <p class="text-gray-500">Creating PDF and Image</p>
-            </div>
+            <div id="report-spinner" class="py-10"><div class="spinner ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div><h2 class="text-xl font-semibold">Generating Report...</h2></div>
             <div id="report-actions" class="hidden space-y-4">
-                <i class="fas fa-check-circle text-5xl text-green-500"></i>
-                <h2 class="text-xl font-bold">Success!</h2>
-                <p class="text-xs text-gray-500">Downloads should start automatically.</p>
-                <div class="grid grid-cols-1 gap-3">
-                    <a id="wa-share-btn" href="#" class="block w-full bg-green-500 text-white py-3 rounded font-bold shadow hover:bg-green-600"><i class="fab fa-whatsapp mr-2"></i> Share via WhatsApp</a>
-                    <a id="pdf-dl-btn" href="#" download="report.pdf" class="block w-full bg-gray-600 text-white py-2 rounded font-medium text-sm">Download PDF Manually</a>
-                </div>
+                <i class="fas fa-check-circle text-5xl text-green-500"></i><h2 class="text-xl font-bold">Success!</h2>
+                <div class="grid grid-cols-1 gap-3"><a id="wa-share-btn" href="#" class="block w-full bg-green-500 text-white py-3 rounded font-bold shadow hover:bg-green-600">Share via WhatsApp</a><a id="pdf-dl-btn" href="#" download="report.pdf" class="block w-full bg-gray-600 text-white py-2 rounded font-medium text-sm">Download PDF</a></div>
                 <button onclick="resetApp()" class="text-gray-500 underline text-sm mt-4">Close & Return to Login</button>
             </div>
         </div>
     </div>
 
-    <!-- HIDDEN CONTAINER FOR JPG RENDERING -->
+    <!-- HIDDEN JPG -->
     <div id="hidden-report-container">
         <h2>Daily Work Report</h2>
         <div class="rpt-header">
-            <div>
-                <div>Date: <span id="rpt-date"></span></div>
-                <div>Department: <span id="rpt-dept"></span></div>
-                <!-- Removed Tag No here -->
-            </div>
-            <div style="text-align:right;">
-                <div>Supervisor: <span id="rpt-sup-top"></span></div>
-                <div>Engineer: <span id="rpt-eng-top"></span></div>
-            </div>
+            <div><div>Date: <span id="rpt-date"></span></div><div>Department: <span id="rpt-dept"></span></div></div>
+            <div style="text-align:right;"><div>Supervisor: <span id="rpt-sup-top"></span></div><div>Engineer: <span id="rpt-eng-top"></span></div></div>
         </div>
-        
         <div class="section-title">Work Logs</div>
         <table class="rpt-table" id="rpt-job-table">
-            <colgroup>
-                <col style="width: 4%;">  <!-- SL -->
-                <col style="width: 8%;">  <!-- Date -->
-                <col style="width: 8%;">  <!-- Area -->
-                <col style="width: 8%;">  <!-- Job -->
-                <col style="width: 8%;">  <!-- Tag (New) -->
-                <col style="width: 20%;"> <!-- Loc (Adjusted) -->
-                <col style="width: 8%;">  <!-- Type -->
-                <col style="width: 6%;">  <!-- Elev -->
-                <col style="width: 6%;">  <!-- Dur -->
-                <col style="width: 5%;">  <!-- L -->
-                <col style="width: 5%;">  <!-- W -->
-                <col style="width: 5%;">  <!-- H -->
-                <col style="width: 4%;">  <!-- Nos -->
-                <col style="width: 5%;">  <!-- Vol -->
-            </colgroup>
-            <thead>
-                <tr>
-                    <th>SL No</th><th>Date</th><th>Area</th><th>Job Type</th><th>Tag No.</th><th>Work Location</th>
-                    <th>Scaffolding Type</th><th>Elevation</th><th>Duration</th>
-                    <th>L</th><th>W</th><th>H</th><th>NOS</th><th>Volume</th>
-                </tr>
-            </thead>
+            <colgroup><col style="width: 4%;"><col style="width: 8%;"><col style="width: 8%;"><col style="width: 8%;"><col style="width: 8%;"><col style="width: 20%;"><col style="width: 8%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 4%;"><col style="width: 5%;"></colgroup>
+            <thead><tr><th>SL No</th><th>Date</th><th>Area</th><th>Job Type</th><th>Tag No.</th><th>Work Location</th><th>Scaffolding Type</th><th>Elevation</th><th>Duration</th><th>L</th><th>W</th><th>H</th><th>NOS</th><th>Volume</th></tr></thead>
             <tbody></tbody>
         </table>
-        
         <div class="section-title">Manpower Reference</div>
         <table class="rpt-table" id="rpt-manpower-table" style="width: 70%;">
-            <colgroup>
-                <col style="width: 10%;"> 
-                <col style="width: 35%;"> 
-                <col style="width: 20%;"> 
-                <col style="width: 25%;"> 
-                <col style="width: 10%;"> 
-            </colgroup>
-            <thead>
-                <tr>
-                    <th>SL NO.</th><th>NAME</th><th>EmpCode</th><th>Designation</th><th>Overtime</th>
-                </tr>
-            </thead>
+            <colgroup><col style="width: 10%;"><col style="width: 35%;"><col style="width: 20%;"><col style="width: 25%;"><col style="width: 10%;"></colgroup>
+            <thead><tr><th>SL NO.</th><th>NAME</th><th>EmpCode</th><th>Designation</th><th>Overtime</th></tr></thead>
             <tbody></tbody>
         </table>
-        
         <p id="rpt-totals" style="font-weight:bold; font-size:14px;"></p>
-        
         <br/><br/><br/>
         <table style="border:none; width:100%;">
-            <tr style="border:none;">
-                <td style="border:none; text-align:left; vertical-align:bottom; height:60px;">_________________________<br/><span id="rpt-sign-sup"></span><br/>(Supervisor)</td>
-                <td style="border:none; text-align:right; vertical-align:bottom; height:60px;">_________________________<br/><span id="rpt-sign-eng"></span><br/>(AMNS ENGINEER NAME SIGN)</td>
-            </tr>
+            <tr style="border:none;"><td style="border:none; text-align:left; vertical-align:bottom; height:60px;">_________________________<br/><span id="rpt-sign-sup"></span><br/>(Supervisor)</td><td style="border:none; text-align:right; vertical-align:bottom; height:60px;">_________________________<br/><span id="rpt-sign-eng"></span><br/>(AMNS ENGINEER NAME SIGN)</td></tr>
         </table>
     </div>
 
@@ -373,29 +271,31 @@
             try {
                 await apiRequest('submitCheckIn', payload, 'POST');
                 btn.innerText = 'Submit Check-In'; btn.disabled = false;
+                loadCheckInData(); // Refresh List
                 const summary = `*Date:* ${date}\n*Supervisor:* ${currentUser}\n*Team:*\n` + selectedWorkers.map(w => `- ${w.name} (${w.designation})`).join('\n');
                 const ta = document.createElement('textarea'); ta.value = summary; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
                 if(confirm("Saved! Summary copied. Open WhatsApp?")) { window.open(`https://wa.me/?text=${encodeURIComponent(summary)}`, '_blank'); }
             } catch(e) { alert("Submission Failed."); btn.innerText = 'Submit Check-In'; btn.disabled = false; }
         }
 
-        function switchTab(tab) {
-            document.getElementById('view-checkin').classList.add('hidden');
-            document.getElementById('view-checkout').classList.add('hidden');
-            document.getElementById('tab-checkin').classList.replace('text-blue-600', 'text-gray-500');
-            document.getElementById('tab-checkin').classList.replace('border-blue-600', 'border-transparent');
-            document.getElementById('tab-checkout').classList.replace('text-blue-600', 'text-gray-500');
-            document.getElementById('tab-checkout').classList.replace('border-blue-600', 'border-transparent');
-            if(tab === 'checkin') {
-                document.getElementById('view-checkin').classList.remove('hidden');
-                document.getElementById('tab-checkin').classList.add('text-blue-600', 'border-blue-600');
-                document.getElementById('tab-checkin').classList.remove('text-gray-500', 'border-transparent');
-            } else {
-                document.getElementById('view-checkout').classList.remove('hidden');
-                document.getElementById('tab-checkout').classList.add('text-blue-600', 'border-blue-600');
-                document.getElementById('tab-checkout').classList.remove('text-gray-500', 'border-transparent');
-                handleCheckOutDateChange();
-            }
+        // NEW: Load CheckIn Data for Deletion
+        async function loadCheckInData() {
+            const date = document.getElementById('ci-date').value;
+            const list = document.getElementById('submitted-workers-list');
+            list.innerHTML = '<p class="text-xs text-gray-400">Loading...</p>';
+            try {
+                const data = await apiRequest('getDailyData', { date, supervisor: currentUser });
+                if(data.checkIns.length === 0) {
+                    list.innerHTML = '<div class="text-center text-gray-400 py-2 text-xs">No workers submitted for this date.</div>';
+                } else {
+                    list.innerHTML = data.checkIns.map(w => `
+                        <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-sm">
+                            <div>${w.name} <span class="text-xs text-gray-500">(${w.designation})</span></div>
+                            <button onclick="deleteRow('CheckIn', ${w.rowIndex})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) { console.error(e); }
         }
 
         async function handleCheckOutDateChange() {
@@ -408,11 +308,53 @@
                 const data = await apiRequest('getDailyData', { date, supervisor: currentUser });
                 checkInWorkers = data.checkIns;
                 document.getElementById('fetched-dept').value = data.department || "";
+                
                 if(checkInWorkers.length === 0) refList.innerHTML = '<p class="italic text-gray-400">No Check-Ins found for this date.</p>';
                 else refList.innerHTML = checkInWorkers.map(w => `<div class="flex justify-between"><span>${w.name}</span> <span class="text-xs bg-gray-200 px-1 rounded">${w.designation}</span></div>`).join('');
+                
                 entries = data.logs || [];
                 renderEntryList();
             } catch(e) { console.error(e); }
+        }
+
+        // --- ROBUST DELETE ---
+        async function deleteRow(sheetName, rowIndex) {
+            if(!confirm("Are you sure you want to delete this entry?")) return;
+            try {
+                const res = await apiRequest('deleteEntry', { sheetName, rowIndex, supervisor: currentUser }, 'POST');
+                if(res.success) {
+                    // Mandatory Refresh to update Row Indexes
+                    if(sheetName === 'CheckIn') loadCheckInData();
+                    else handleCheckOutDateChange();
+                } else {
+                    alert("Delete failed: " + (res.error || "Unknown error"));
+                }
+            } catch(e) { alert("Connection failed."); }
+        }
+        
+        function removeUnsavedEntry(idx) {
+            entries.splice(idx, 1);
+            renderEntryList();
+        }
+
+        function renderEntryList() {
+            const list = document.getElementById('entry-list');
+            const btn = document.getElementById('btn-co-final');
+            if(entries.length === 0) { list.innerHTML = '<div class="text-center text-gray-400 py-8 text-sm">No entries added.</div>'; btn.classList.add('hidden'); return; }
+            btn.classList.remove('hidden');
+            list.innerHTML = entries.map((e, i) => {
+                const deleteAction = e.rowIndex ? `deleteRow('CheckOut', ${e.rowIndex})` : `removeUnsavedEntry(${i})`;
+                const statusClass = e.rowIndex ? "border-green-200 bg-green-50" : "border-blue-100 bg-blue-50";
+                return `
+                <div class="${statusClass} border p-3 rounded text-sm relative">
+                    <button onclick="${deleteAction}" class="absolute top-2 right-2 text-red-400 font-bold hover:text-red-600"><i class="fas fa-trash"></i></button>
+                    <div class="font-bold text-gray-800">${e.jobType} @ ${e.workLocation}</div>
+                    <div class="grid grid-cols-2 gap-x-4 mt-1 text-gray-600 text-xs">
+                        <div>Tag: ${e.tagNo || '-'}</div><div>Vol: ${e.vol}m³</div>
+                        <div>Dept: ${e.department || '-'}</div><div>Elev: ${e.elevation}</div>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         function openEntryModal() {
@@ -463,23 +405,25 @@
             closeEntryModal();
         }
 
-        function renderEntryList() {
-            const list = document.getElementById('entry-list');
-            const btn = document.getElementById('btn-co-final');
-            if(entries.length === 0) { list.innerHTML = '<div class="text-center text-gray-400 py-8 text-sm">No entries added.</div>'; btn.classList.add('hidden'); return; }
-            btn.classList.remove('hidden');
-            list.innerHTML = entries.map((e, i) => `
-                <div class="bg-blue-50 border border-blue-100 p-3 rounded text-sm relative">
-                    <button onclick="removeEntry(${i})" class="absolute top-2 right-2 text-red-400 font-bold">&times;</button>
-                    <div class="font-bold text-blue-800">${e.jobType} @ ${e.workLocation}</div>
-                    <div class="grid grid-cols-2 gap-x-4 mt-1 text-gray-600 text-xs">
-                        <div>Tag: ${e.tagNo || '-'}</div><div>Vol: ${e.vol}m³</div>
-                        <div>Dept: ${e.department || '-'}</div><div>Elev: ${e.elevation}</div>
-                    </div>
-                </div>
-            `).join('');
+        function switchTab(tab) {
+            document.getElementById('view-checkin').classList.add('hidden');
+            document.getElementById('view-checkout').classList.add('hidden');
+            document.getElementById('tab-checkin').classList.replace('text-blue-600', 'text-gray-500');
+            document.getElementById('tab-checkin').classList.replace('border-blue-600', 'border-transparent');
+            document.getElementById('tab-checkout').classList.replace('text-blue-600', 'text-gray-500');
+            document.getElementById('tab-checkout').classList.replace('border-blue-600', 'border-transparent');
+            if(tab === 'checkin') {
+                document.getElementById('view-checkin').classList.remove('hidden');
+                document.getElementById('tab-checkin').classList.add('text-blue-600', 'border-blue-600');
+                document.getElementById('tab-checkin').classList.remove('text-gray-500', 'border-transparent');
+                loadCheckInData();
+            } else {
+                document.getElementById('view-checkout').classList.remove('hidden');
+                document.getElementById('tab-checkout').classList.add('text-blue-600', 'border-blue-600');
+                document.getElementById('tab-checkout').classList.remove('text-gray-500', 'border-transparent');
+                handleCheckOutDateChange();
+            }
         }
-        function removeEntry(idx) { entries.splice(idx, 1); renderEntryList(); }
 
         async function submitCheckOut() {
             if(entries.length === 0) return;
